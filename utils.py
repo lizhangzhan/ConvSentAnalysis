@@ -2,11 +2,12 @@ import os
 import codecs
 import re
 import numpy as np
-from collections import defaultdict
+
+from sklearn.cross_validation import train_test_split
 
 WHITESPACE = re.compile(r"\s+")
 
-def get_data(n=1000):
+def parse_data(n=1000):
     """Returns a list of phrase, sentiment class tuples. Phrases range from 3 to 267 characters.
     Classes range from 1 (very negative) to 5 (very positive)."""
 
@@ -120,3 +121,29 @@ def vectorize(data, max_phrase_length):
     y = np.asarray(y, dtype=np.int8)
 
     return X, y
+
+
+def load_data(random_state, n=10000, max_phrase_length=100):
+    # get the data set
+    data = parse_data(n)
+
+    # print some statistics
+    print_input_statistics(data)
+
+    vocab_size = len(get_one_hot_vectors().keys())
+    print "vocab size: "+str(vocab_size)
+
+    X, y = vectorize(data, max_phrase_length)
+    print X.shape
+
+    # get train-test split:
+    X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                            test_size=0.10,
+                                            random_state=random_state)
+    # get train-test split:
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train,
+                                            test_size=0.10,
+                                            random_state=random_state)
+
+    return (X_train, y_train), (X_valid, y_valid), (X_test, y_test)
+
