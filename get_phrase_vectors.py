@@ -35,7 +35,7 @@ def sentiment_to_class(sentiment):
     Convert sentiment probability to one of five classes, according to the following cut-offs
     (see './stanfordSentimentTreebank/README.txt'):
 
-    [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
+    [0, 0.2], [0.2, 0.4], [0.4, 0.6], [0.6, 0.8], [0.8, 1.0]
     """
     sentiment = float(sentiment)
 
