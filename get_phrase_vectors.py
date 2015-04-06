@@ -1,18 +1,19 @@
 import os
+import codecs
 import re
 import numpy as np
 from collections import defaultdict
 
 WHITESPACE = re.compile(r"\s+")
 
-def get_data():
+def get_data(n=1000):
     """Returns a list of phrase, sentiment class tuples. Phrases range from 3 to 267 characters.
     Classes range from 1 (very negative) to 5 (very positive)."""
 
     dir_ = os.getcwd() + '/stanfordSentimentTreebank/'
     # get evaluations as np array:
     evaluations = np.zeros(239231+1, dtype=np.int8) # total nb of evaluations + 1
-    for line in open(dir_ + 'sentiment_labels.txt', 'r'):
+    for line in codecs.open(dir_ + 'sentiment_labels.txt', 'r'):
         idx, sentiment = line.strip().split('|', 1)
         try:
             evaluations[int(idx)] = sentiment_to_class(sentiment)
@@ -20,10 +21,14 @@ def get_data():
             pass
 
     data = []
+    cnt = 0
     for line in open(dir_ + 'dictionary.txt', 'r'):
         phrase, idx = line.strip().lower().split('|')
         line = re.sub(WHITESPACE, " ", line)
         data.append((phrase, evaluations[int(idx)]))
+        cnt += 1
+        if cnt >= n:
+            break
 
     return tuple(data)
 
@@ -82,31 +87,46 @@ def get_one_hot_vectors():
 
     return one_hot_vector_dict
 
+def pad_or_cut(phrase, max_phrase_length):
+    while len(phrase) < max_phrase_length:
+        phrase+=" "
+    return phrase[:max_phrase_length]
 
-def quantize(phrase, one_hot_vector_dict, max_phrase_length):
+
+def vectorize(data, max_phrase_length):
     """
     Concatenate one-hot vectors for chars in 'string_'.
     Add zero-vectors if 'string_' is shorter than the longest string in the data set.
     """
-    # if 'phrase' is shorter than the longest phrase in the data set, add empty strings
-    # this ensures equal length of all phrase vectors (aka padding)
-    while len(phrase) < max_phrase_length:
-        phrase+=" "
 
-    # get one-hot vectors for all chars in the phrase
-    vs = [one_hot_vector_dict[char] for char in phrase]
+    X, y = [], []
+    one_hot_vector_dict = get_one_hot_vectors()
+    filler = np.zeros(len(one_hot_vector_dict), dtype=np.int8)
 
-    assert len(vs) == max_phrase_length
+    for phrase, class_ in data:
+        phrase = pad_or_cut(phrase, max_phrase_length)
+        # get one-hot vectors for all chars in the phrase
+        vs = []
+        for char in phrase:
+            try:
+                vs.append(one_hot_vector_dict[char])
+            except KeyError:
+                vs.append(filler)
+        assert len(vs) == max_phrase_length
+        X.append(np.hstack(vs))
+        y.append(class_)
 
-    # return concatenated char vectors
-    return numpy.hstack(vs)
+    X = np.asarray(X, dtype=np.int8)
+    y = np.asarray(y, dtype=np.int8)
+
+    return X, y
 
 
 #######################################################################################################################
 
 
 # get the data set
-data = get_data()
+data = get_data(n=10000000)
 
 
 # print the  first 10 data points
@@ -118,14 +138,12 @@ print
 # print some statistics
 print_input_statistics(data)
 
-# get one-hot vector dict and quantize phrases
-one_hot_vector_dict = get_one_hot_vectors()
+vocab_size = len(get_one_hot_vectors().keys())
+print "vocab size: "+str(vocab_size)
 
 print data[100][0]
 
-print quantize(phrase, one_hot_vector_dict, max_phrase_length=100)
-
-#phrase_vectors = [quantize(phrase, one_hot_vector_dict, max_phrase_length=267) for phrase, class_ in data]
-
+X, y = vectorize(data, 100)
+print X.shape
 
 # each char vector has length=267; we have 66 chars, so each phrase vector has length=267 * 67 = 17.889
