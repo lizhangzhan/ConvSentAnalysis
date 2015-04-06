@@ -8,15 +8,13 @@ def get_data():
     Classes range from 1 (very negative) to 5 (very positive)."""
 
     dir_ = os.getcwd() + '/stanfordSentimentTreebank/'
-
     # get evaluations as np array:
-    evaluations = np.zeros(239231+1) # total nb of evaluations + 1
+    evaluations = np.zeros(239231+1, dtype=np.int8) # total nb of evaluations + 1
     for line in open(dir_ + 'sentiment_labels.txt', 'r'):
         idx, sentiment = line.strip().split('|', 1)
         try:
             evaluations[int(idx)] = sentiment_to_class(sentiment)
-        except ValueError:
-            # ignore header in 1st line
+        except ValueError: # ignore header in 1st line
             pass
 
     data = []
@@ -54,7 +52,7 @@ def print_input_statistics(data):
     print 'Input statistics (in characters)'
     print 'Longest phrase:\t\t%s' % max(phrase_lengths)
     print 'Shortest phrase:\t%s' % min(phrase_lengths)
-    print 'Mean phrase length:\t%s (std: %s)' % (numpy.mean(phrase_lengths), numpy.std(phrase_lengths))
+    print 'Mean phrase length:\t%s (std: %s)' % (np.mean(phrase_lengths), np.std(phrase_lengths))
 
 def get_one_hot_vectors():
     """ Construct one-hot vectors for the chars below """
@@ -70,16 +68,15 @@ def get_one_hot_vectors():
 
     # does not cover 2.448 non-ASCII char tokens, out of a total of 10.207.891 char tokens in the data set
     # (> 99.999 % of all char tokens are covered)
-    chars = english_chars + digits + special_chars
+    chars = tuple(set(english_chars + digits + special_chars))
 
     # return an all zero vector as the default case
-    one_hot_vector_dict = defaultdict(lambda: numpy.zeros(len(chars)))
-
+    one_hot_vector_dict = {}
     for idx, char in enumerate(chars):
-        vector = numpy.zeros(len(chars))
+        vector = np.zeros(len(chars), dtype=np.int8)
         vector[idx] = 1
         one_hot_vector_dict[char] = vector
-
+        
     return one_hot_vector_dict
 
 
@@ -109,8 +106,9 @@ def quantize(phrase, one_hot_vector_dict, max_phrase_length):
 # get the data set
 data = get_data()
 
+
 # print the  first 10 data points
-for phrase, class_ in data[:10]:
+for phrase, class_ in data[:50]:
     print class_, phrase
 print
 print
@@ -120,7 +118,10 @@ print_input_statistics(data)
 
 # get one-hot vector dict and quantize phrases
 one_hot_vector_dict = get_one_hot_vectors()
+
+"""
 phrase_vectors = [quantize(phrase, one_hot_vector_dict, max_phrase_length=267) for phrase, class_ in data]
 
 
 # each char vector has length=267; we have 67 chars, so each phrase vector has length=267 * 67 = 17.889
+"""
