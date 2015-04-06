@@ -1,5 +1,5 @@
 import os
-import numpy
+import numpy as np
 from collections import defaultdict
 
 
@@ -9,25 +9,22 @@ def get_data():
 
     dir_ = os.getcwd() + '/stanfordSentimentTreebank/'
 
-    phrase_dict = dict()
+    # get evaluations as np array:
+    evaluations = np.zeros(239231+1) # total nb of evaluations + 1
+    for line in open(dir_ + 'sentiment_labels.txt', 'r'):
+        idx, sentiment = line.strip().split('|', 1)
+        try:
+            evaluations[int(idx)] = sentiment_to_class(sentiment)
+        except ValueError:
+            # ignore header in 1st line
+            pass
 
-    # store phrases by index
-    with open(dir_ + 'dictionary.txt', 'r') as phrase_file:
-        for phrase_idx in phrase_file:
-            phrase, idx = phrase_idx.strip().split('|')
-            phrase = phrase.lower()
-            phrase_dict[idx] = phrase
-
-    # get the sentiment class for each phrase and return them as a list of phrase-class tuples
     data = []
-    with open(dir_ + 'sentiment_labels.txt', 'r') as sentiment_file:
-        sentiment_file.next()
-        for idx_sentiment in sentiment_file:
-            idx, sentiment = idx_sentiment.strip().split('|')
-            class_ = sentiment_to_class(sentiment)
-            data.append((phrase_dict[idx], class_))
+    for line in open(dir_ + 'dictionary.txt', 'r'):
+        phrase, idx = line.strip().lower().split('|')
+        data.append((phrase, evaluations[int(idx)]))
 
-    return data
+    return tuple(data)
 
 
 def sentiment_to_class(sentiment):
@@ -58,8 +55,6 @@ def print_input_statistics(data):
     print 'Longest phrase:\t\t%s' % max(phrase_lengths)
     print 'Shortest phrase:\t%s' % min(phrase_lengths)
     print 'Mean phrase length:\t%s (std: %s)' % (numpy.mean(phrase_lengths), numpy.std(phrase_lengths))
-
-
 
 def get_one_hot_vectors():
     """ Construct one-hot vectors for the chars below """
