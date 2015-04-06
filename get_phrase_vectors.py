@@ -1,7 +1,9 @@
 import os
+import re
 import numpy as np
 from collections import defaultdict
 
+WHITESPACE = re.compile(r"\s+")
 
 def get_data():
     """Returns a list of phrase, sentiment class tuples. Phrases range from 3 to 267 characters.
@@ -20,6 +22,7 @@ def get_data():
     data = []
     for line in open(dir_ + 'dictionary.txt', 'r'):
         phrase, idx = line.strip().lower().split('|')
+        line = re.sub(WHITESPACE, " ", line)
         data.append((phrase, evaluations[int(idx)]))
 
     return tuple(data)
@@ -58,7 +61,7 @@ def get_one_hot_vectors():
     """ Construct one-hot vectors for the chars below """
 
     english_chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                     'u', 'v', 'w', 'x', 'y', 'z']
+                     'u', 'v', 'w', 'x', 'y', 'z', ' ']
 
     digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
@@ -76,7 +79,7 @@ def get_one_hot_vectors():
         vector = np.zeros(len(chars), dtype=np.int8)
         vector[idx] = 1
         one_hot_vector_dict[char] = vector
-        
+
     return one_hot_vector_dict
 
 
@@ -86,10 +89,9 @@ def quantize(phrase, one_hot_vector_dict, max_phrase_length):
     Add zero-vectors if 'string_' is shorter than the longest string in the data set.
     """
     # if 'phrase' is shorter than the longest phrase in the data set, add empty strings
-    # this ensures equal length of all phrase vectors
-    if len(phrase) < max_phrase_length:
-        nr_empty_chars = max_phrase_length - len(phrase)
-        phrase += ''.join([' ' for i in range(nr_empty_chars)])
+    # this ensures equal length of all phrase vectors (aka padding)
+    while len(phrase) < max_phrase_length:
+        phrase+=" "
 
     # get one-hot vectors for all chars in the phrase
     vs = [one_hot_vector_dict[char] for char in phrase]
@@ -119,9 +121,11 @@ print_input_statistics(data)
 # get one-hot vector dict and quantize phrases
 one_hot_vector_dict = get_one_hot_vectors()
 
-"""
-phrase_vectors = [quantize(phrase, one_hot_vector_dict, max_phrase_length=267) for phrase, class_ in data]
+print data[100][0]
+
+print quantize(phrase, one_hot_vector_dict, max_phrase_length=100)
+
+#phrase_vectors = [quantize(phrase, one_hot_vector_dict, max_phrase_length=267) for phrase, class_ in data]
 
 
-# each char vector has length=267; we have 67 chars, so each phrase vector has length=267 * 67 = 17.889
-"""
+# each char vector has length=267; we have 66 chars, so each phrase vector has length=267 * 67 = 17.889
