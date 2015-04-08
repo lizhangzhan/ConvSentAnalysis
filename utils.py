@@ -44,15 +44,15 @@ def sentiment_to_class(sentiment):
     sentiment = float(sentiment)
 
     if sentiment >= 0.8:
-        return 5
-    elif sentiment >= 0.6:
         return 4
-    elif sentiment >= 0.4:
+    elif sentiment >= 0.6:
         return 3
-    elif sentiment >= 0.2:
+    elif sentiment >= 0.4:
         return 2
-    else:
+    elif sentiment >= 0.2:
         return 1
+    else:
+        return 0
 
 def print_input_statistics(data):
 
